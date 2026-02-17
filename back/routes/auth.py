@@ -5,8 +5,7 @@ from passlib.context import CryptContext
 from db import get_db
 import models
 import schemas
-from auth import create_access_token, get_current_user
-from services.auth_logic import authenticate_user
+from services.auth_logic import authenticate_user, create_access_token, get_current_user
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -56,5 +55,5 @@ def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = 
     }
 
 @router.get("/me", response_model=schemas.UserOut)
-def read_users_me(current_user: models.User = Depends(get_current_user)):
+async def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user

@@ -25,11 +25,26 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const data = await loginUser(email, password);
-      console.log("LOGIN RESPONSE:", data);
-      await signIn(data.access_token); 
       
+      console.log("CONTENU DE DATA:", JSON.stringify(data));
+
+      if (data && data.access_token) {
+        const token = String(data.access_token); // On force la conversion en string
+        console.log("Token valide extrait, stockage...");
+        
+        await signIn(token); 
+        
+        setTimeout(() => {
+          router.replace('/(tabs)/home'); 
+        }, 100);
+        
+      } else {
+        console.error("Réponse reçue mais pas de access_token:", data);
+        Alert.alert('Erreur', 'Réponse du serveur incorrecte.');
+      }
     } catch (error: any) {
-      Alert.alert('Erreur', 'Identifiants invalides ou serveur indisponible.');
+      console.error("Erreur dans handleLogin:", error.response?.data || error.message);
+      Alert.alert('Erreur', 'Identifiants invalides.');
     } finally {
       setLoading(false);
     }

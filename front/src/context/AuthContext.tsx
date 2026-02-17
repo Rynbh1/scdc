@@ -52,11 +52,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [userToken, isLoading]);
 
 
-  const signIn = async (data: any) => {
-    await tokenStorage.setItem('userToken', data.access_token);
-    await tokenStorage.setItem('userData', JSON.stringify({ role: data.role }));
-    setUserToken(data.access_token);
-    setUser({ role: data.role });
+  const signIn = async (token: string) => {
+    console.log("AuthContext: Reçu token pour stockage:", token);
+    if (!token) {
+      console.error("AuthContext: Erreur, le token est vide !");
+      return;
+    }
+    try {
+      await tokenStorage.setItem('userToken', token);
+      setUserToken(token);
+      console.log("AuthContext: Token stocké et état mis à jour.");
+    } catch (e) {
+      console.error("AuthContext: Erreur pendant le signIn:", e);
+    }
   };
 
   const signOut = async () => {

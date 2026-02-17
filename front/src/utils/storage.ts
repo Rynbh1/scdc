@@ -2,11 +2,23 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 export const tokenStorage = {
-  setItem: async (key: string, value: string) => {
-    if (Platform.OS === 'web') {
-      localStorage.setItem(key, value);
-    } else {
-      await SecureStore.setItemAsync(key, value);
+  async setItem(key: string, value: any) {
+    try {
+      let valueToStore = value;
+      
+      if (value === null || value === undefined) {
+        console.error(`Tentative de stockage d'une valeur vide pour la clé ${key}`);
+        return;
+      }
+
+      if (typeof value !== 'string') {
+        console.warn(`SecureStore: conversion de la valeur pour ${key} en string`);
+        valueToStore = JSON.stringify(value);
+      }
+
+      await SecureStore.setItemAsync(key, valueToStore);
+    } catch (error) {
+      console.error("Erreur fatale SecureStore SetItem:", error);
     }
   },
   getItem: async (key: string) => {
