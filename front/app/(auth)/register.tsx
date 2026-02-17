@@ -11,7 +11,6 @@ export default function RegisterScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   
-  // État du formulaire avec tous les champs requis par le sujet
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -25,7 +24,6 @@ export default function RegisterScreen() {
   });
 
   const handleRegister = async () => {
-    // Validation basique
     if (!form.first_name || !form.last_name || !form.email || !form.password || !form.address) {
       Alert.alert('Erreur', 'Veuillez remplir au moins les informations obligatoires (Nom, Email, MDP, Adresse).');
       return;
@@ -60,7 +58,6 @@ export default function RegisterScreen() {
 
         <View style={styles.form}>
           
-          {/* --- IDENTITÉ --- */}
           <Text style={styles.sectionLabel}>Identité</Text>
           <View style={styles.row}>
             <TextInput
@@ -93,7 +90,6 @@ export default function RegisterScreen() {
             onChangeText={(t) => setForm({...form, phone_number: t})}
           />
 
-          {/* --- FACTURATION & LIVRAISON --- */}
           <Text style={styles.sectionLabel}>Facturation</Text>
           
           <TextInput
@@ -120,7 +116,6 @@ export default function RegisterScreen() {
             onChangeText={(t) => setForm({...form, country: t})}
           />
 
-          {/* --- BOUTONS --- */}
           <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
             {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.buttonText}>S'inscrire</Text>}
           </TouchableOpacity>
@@ -129,7 +124,6 @@ export default function RegisterScreen() {
             <Text style={styles.secondaryButtonText}>Retour à la connexion</Text>
           </TouchableOpacity>
           
-          {/* Espace vide pour le scroll */}
           <View style={{height: 50}} />
         </View>
       </ScrollView>

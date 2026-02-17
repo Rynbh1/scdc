@@ -30,7 +30,6 @@ export default function DashboardScreen() {
       );
     }
 
-  // --- SÉCURITÉ ANTI-CRASH ---
   if (!reports) {
     return (
       <View style={{flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center'}}>
@@ -45,19 +44,16 @@ export default function DashboardScreen() {
       <Text style={styles.title}>État du Magasin</Text>
       
       <View style={styles.grid}>
-        {/* KPI 1 : Panier Moyen */}
         <View style={styles.card}>
           <Text style={styles.label}>Panier Moyen</Text>
           <Text style={styles.value}>{reports.average_basket} €</Text>
         </View>
 
-        {/* KPI 3 : Rupture de stock */}
         <View style={[styles.card, reports.stock_rupture_rate > 20 && styles.warningCard]}>
           <Text style={styles.label}>Rupture Stock</Text>
           <Text style={styles.value}>{reports.stock_rupture_rate} %</Text>
         </View>
 
-        {/* KPI 5 : Fidélité */}
         <View style={styles.card}>
           <Text style={styles.label}>Fidélité Client</Text>
           <Text style={styles.value}>{reports.customer_loyalty_rate} %</Text>
@@ -79,7 +75,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#222' 
   },
-  warningCard: { borderColor: '#552222' }, // Légère alerte si trop de rupture
+  warningCard: { borderColor: '#552222' },
   label: { color: '#888', fontSize: 14, marginBottom: 8, textTransform: 'uppercase' },
   value: { color: '#fff', fontSize: 32, fontWeight: '600' }
 });

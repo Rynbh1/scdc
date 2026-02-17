@@ -29,7 +29,7 @@ export default function LoginScreen() {
       console.log("CONTENU DE DATA:", JSON.stringify(data));
 
       if (data && data.access_token) {
-        const token = String(data.access_token); // On force la conversion en string
+        const token = String(data.access_token);
         console.log("Token valide extrait, stockage...");
         
         await signIn(token); 
@@ -113,4 +113,4 @@ const styles = StyleSheet.create({
   buttonText: { color: '#000', fontSize: 16, fontWeight: '600' },
   secondaryButton: { marginTop: 8, alignItems: 'center' },
   secondaryButtonText: { color: '#666', fontSize: 14 },
-});
+}); 

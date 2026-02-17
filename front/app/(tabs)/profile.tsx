@@ -13,11 +13,9 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Récupération des infos complètes de l'utilisateur
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // Note: Tu devras créer cette route côté backend (voir ci-dessous)
         const response = await apiClient.get('/auth/me');
         setProfile(response.data);
       } catch (error) {
@@ -60,7 +58,6 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           <Ionicons name="person" size={40} color="#fff" />
@@ -71,7 +68,6 @@ export default function ProfileScreen() {
         <Text style={styles.role}>{profile?.role || 'Utilisateur'}</Text>
       </View>
 
-      {/* INFORMATIONS PERSONNELLES */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Mes Informations</Text>
         
@@ -94,7 +90,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* INFORMATIONS DE FACTURATION (Requis par le sujet) */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Facturation & Livraison</Text>
         
@@ -111,7 +106,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* BOUTON DÉCONNEXION */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
         <Ionicons name="log-out-outline" size={24} color="#fff" style={{marginRight: 10}} />
         <Text style={styles.logoutText}>Se déconnecter</Text>

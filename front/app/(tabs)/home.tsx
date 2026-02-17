@@ -15,18 +15,14 @@ export default function ScannerScreen() {
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // Gestion de la recherche
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]); // Liste des résultats
-  const [showResultsList, setShowResultsList] = useState(false); // Afficher la liste ou pas
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showResultsList, setShowResultsList] = useState(false);
 
-  // Produit sélectionné (pour la modale)
   const [product, setProduct] = useState<any>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const { user } = useAuth(); // Pour savoir si on est manager (pour l'édit de prix)
-
-  // --- ACTIONS ---
+  const { user } = useAuth();
 
   const handleOpenScanner = async () => {
     if (!permission?.granted) {
@@ -44,7 +40,6 @@ export default function ScannerScreen() {
     if (scanned) return;
     setScanned(true);
     setIsCameraOpen(false);
-    // Scan direct = Un seul produit précis
     fetchProduct(data, 'scan');
   };
 
@@ -56,10 +51,9 @@ export default function ScannerScreen() {
 
   const fetchProduct = async (identifier: string, type: 'scan' | 'search') => {
     setLoading(true);
-    setSearchResults([]); // On vide la liste précédente
+    setSearchResults([]);
     try {
       if (type === 'scan') {
-        // Scan : On cherche un produit unique
         const data = await scanProduct(identifier);
         if (data) {
           setProduct(data);
@@ -68,11 +62,10 @@ export default function ScannerScreen() {
           Alert.alert("Inconnu", "Produit non trouvé.");
         }
       } else {
-        // Recherche Texte : On veut une LISTE
         const results = await searchProduct(identifier);
         if (results && results.length > 0) {
           setSearchResults(results);
-          setShowResultsList(true); // On affiche la liste
+          setShowResultsList(true);
         } else {
           Alert.alert("Oups", "Aucun produit trouvé pour cette recherche.");
         }
@@ -86,8 +79,8 @@ export default function ScannerScreen() {
 
   const selectProductFromList = (item: any) => {
     setProduct(item);
-    setShowResultsList(false); // On cache la liste
-    setIsModalVisible(true);   // On ouvre le détail
+    setShowResultsList(false);
+    setIsModalVisible(true);
   };
 
   const closeSearch = () => {
@@ -97,7 +90,6 @@ export default function ScannerScreen() {
     Keyboard.dismiss();
   };
 
-  // --- RENDU D'UN ITEM DE LA LISTE ---
   const renderResultItem = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.resultItem} onPress={() => selectProductFromList(item)}>
       <Image 
@@ -116,7 +108,6 @@ export default function ScannerScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* HEADER & SEARCH */}
       <View style={styles.header}>
         <Text style={styles.title}>Scanner</Text>
         <View style={styles.searchContainer}>
@@ -141,12 +132,10 @@ export default function ScannerScreen() {
         </View>
       </View>
 
-      {/* CONTENT: SOIT LA LISTE, SOIT LE BOUTON SCAN */}
       <View style={styles.content}>
         {loading ? (
             <ActivityIndicator size="large" color="#fff" />
         ) : showResultsList ? (
-            // --- LISTE DES RÉSULTATS ---
             <View style={styles.listContainer}>
                 <Text style={styles.resultsTitle}>{searchResults.length} résultats trouvés</Text>
                 <FlatList 
@@ -158,7 +147,6 @@ export default function ScannerScreen() {
                 />
             </View>
         ) : (
-            // --- ÉTAT INITIAL (PLACEHOLDER) ---
             <View style={styles.placeholderContainer}>
                 <View style={styles.placeholderCard}>
                     <Ionicons name="scan-outline" size={100} color="#222" />
@@ -172,7 +160,6 @@ export default function ScannerScreen() {
         )}
       </View>
 
-      {/* MODAL CAMERA (Inchangée) */}
       <Modal visible={isCameraOpen} animationType="slide">
         <View style={{ flex: 1, backgroundColor: 'black' }}>
             <CameraView 
@@ -181,7 +168,6 @@ export default function ScannerScreen() {
                 onBarcodeScanned={scanned ? undefined : handleBarCodeScanned} 
             />
             <View style={styles.overlay}>
-                {/* ... Ton overlay caméra (copier/coller de ton ancien code ou utiliser celui-ci simplifié) ... */}
                 <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.6)'}} />
                 <View style={{height: 250, flexDirection:'row'}}>
                     <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.6)'}} />
@@ -196,7 +182,6 @@ export default function ScannerScreen() {
         </View>
       </Modal>
 
-      {/* MODAL DETAIL PRODUIT */}
       <Modal visible={isModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
@@ -240,14 +225,12 @@ export default function ScannerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000', paddingTop: 60, paddingHorizontal: 20 },
   
-  // HEADER
   header: { marginBottom: 20 },
   title: { fontSize: 32, fontWeight: '800', color: '#fff', marginBottom: 20, letterSpacing: -1 },
   searchContainer: { flexDirection: 'row', backgroundColor: '#111', borderRadius: 12, paddingHorizontal: 15, alignItems: 'center', height: 50, borderWidth: 1, borderColor: '#333' },
   searchInput: { flex: 1, color: '#fff', fontSize: 16 },
   searchIcon: { padding: 5 },
 
-  // CONTENT
   content: { flex: 1 },
   placeholderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 50 },
   placeholderCard: { alignItems: 'center', marginBottom: 40, opacity: 0.6 },
@@ -256,7 +239,6 @@ const styles = StyleSheet.create({
   scanButton: { flexDirection: 'row', backgroundColor: '#fff', paddingVertical: 18, paddingHorizontal: 30, borderRadius: 30, alignItems: 'center' },
   scanButtonText: { color: '#000', fontSize: 16, fontWeight: '700' },
 
-  // LISTE RESULTATS
   listContainer: { flex: 1 },
   resultsTitle: { color: '#666', marginBottom: 10, fontSize: 12, textTransform: 'uppercase' },
   resultItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', padding: 12, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#222' },
@@ -265,7 +247,6 @@ const styles = StyleSheet.create({
   resultName: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   resultBrand: { color: '#888', fontSize: 14 },
 
-  // MODAL & OVERLAY (Style Trinity)
   overlay: { ...StyleSheet.absoluteFillObject },
   closeButton: { position: 'absolute', bottom: 50, alignSelf:'center', backgroundColor:'#fff', width:60, height:60, borderRadius:30, justifyContent:'center', alignItems:'center' },
   
