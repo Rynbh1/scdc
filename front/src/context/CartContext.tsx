@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { tokenStorage as storage } from '../utils/storage';
 
 interface CartItem {
   id: number;
@@ -19,6 +20,23 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    const loadCart = async () => {
+      const saved = await storage.getItem('cart');
+      if (saved) setItems(JSON.parse(saved));
+    };
+    loadCart();
+  }, []);
+
+  useEffect(() => {
+    const saveCart = async () => {
+        if (items.length > 0) {
+        await storage.setItem('cart', JSON.stringify(items));
+        }
+    };
+    saveCart();
+    }, [items]);
 
   const addToCart = (product: any) => {
     setItems((currentItems) => {
@@ -49,6 +67,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) throw new Error("useCart must be used within a CartProvider");
+  if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
 };

@@ -8,6 +8,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { StatusBar } from 'expo-status-bar';
 import { scanProduct, searchProduct } from '../../src/services/ProductService';
 import { useAuth } from '../../src/context/AuthContext';
+import { useCart } from '../../src/context/CartContext';
 
 export default function ScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -23,6 +24,7 @@ export default function ScannerScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const { user } = useAuth();
+  const { addToCart } = useCart();
 
   const handleOpenScanner = async () => {
     if (!permission?.granted) {
@@ -36,11 +38,21 @@ export default function ScannerScreen() {
     setIsCameraOpen(true);
   };
 
-  const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned) return;
-    setScanned(true);
-    setIsCameraOpen(false);
-    fetchProduct(data, 'scan');
+  const handleBarCodeScanned = async ({ data }) => {
+    try {
+      // 1. Récupérer le produit depuis ton API
+      const product = await ProductService.getProductById(data);
+      // 2. L'ajouter au panier
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1
+      });
+      alert(`${product.name} ajouté !`);
+    } catch (err) {
+      console.error("Produit non trouvé");
+    }
   };
 
   const handleSearch = () => {
@@ -201,13 +213,14 @@ export default function ScannerScreen() {
                         </View>
 
                         <TouchableOpacity 
-                            style={styles.addToCartButton}
-                            onPress={() => {
-                                setIsModalVisible(false);
-                                Alert.alert("Panier", "Ajouté (Simulation)");
-                            }}
+                          style={styles.addToCartButton} 
+                          onPress={() => {
+                            addToCart(product);
+                            setIsModalVisible(false);
+                            Alert.alert("Succès", `${product.name} ajouté au panier !`);
+                          }}
                         >
-                            <Text style={styles.addToCartText}>Ajouter au panier</Text>
+                          <Text style={styles.addToCartText}>Ajouter au panier</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => setIsModalVisible(false)} style={{marginTop: 15}}>

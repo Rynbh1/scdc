@@ -1,34 +1,36 @@
 import { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+// 1. Importe ton CartProvider ici
+import { CartProvider } from '../src/context/CartContext'; 
 
 function InitialLayout() {
-  const { userToken, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
 
-    const currentGroup = segments[0];
-    const inAuthGroup = currentGroup === '(auth)';
+    const inAuthGroup = segments[0] === '(auth)';
 
-    console.log(`[Nav] Token: ${!!userToken} | Group: ${currentGroup}`);
-    if (!userToken && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } 
-    else if (userToken && inAuthGroup) {
-      router.replace('/(tabs)/home');
+    if (!user && !inAuthGroup) {
+      router.replace('/login');
+    } else if (user && inAuthGroup) {
+      router.replace('/home');
     }
-  }, [userToken, isLoading, segments]);
+  }, [user, isLoading, segments]);
 
   return <Slot />;
 }
 
 export default function RootLayout() {
   return (
+    // 2. Enveloppe toute l'application avec les Providers
     <AuthProvider>
-      <InitialLayout />
+      <CartProvider>
+        <InitialLayout />
+      </CartProvider>
     </AuthProvider>
   );
 }
