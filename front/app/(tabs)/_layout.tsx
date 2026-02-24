@@ -31,17 +31,30 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="scan-outline" size={size} color={color} />,
         }}
       />
-
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: 'Panier',
+          href: user?.role === 'manager' ? null : '/(tabs)/cart',
+          tabBarIcon: ({ color, size }) => <Ionicons name="cart-outline" size={size} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="dashboard"
         options={{
           title: 'Stats',
-          // On vérifie que c'est bien 'manager' en minuscule (selon ta DB)
-          href: user?.role === 'manager' ? '/dashboard' : null,
+          href: user?.role === 'manager' ? '/(tabs)/dashboard' : null,
           tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart-outline" size={size} color={color} />,
         }}
       />
-
+      <Tabs.Screen
+        name="users"
+        options={{
+          title: 'Utilisateurs',
+          href: user?.role === 'manager' ? '/(tabs)/users' : null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="profile"
         options={{
