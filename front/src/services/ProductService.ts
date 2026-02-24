@@ -17,3 +17,14 @@ export const searchProduct = async (query: string) => {
     throw error;
   }
 };
+
+export const updateProductPrice = async (barcode: string, newPrice: number) => {
+  try {
+    const response = await apiClient.put(`/products/update_price/${barcode}`, {
+      price: newPrice
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

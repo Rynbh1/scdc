@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { CartProvider } from '../src/context/CartContext'; 
 
 function InitialLayout() {
-  const { userToken, isLoading } = useAuth();
+  const { userToken, isLoading, user } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -16,9 +16,13 @@ function InitialLayout() {
     if (!userToken && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (userToken && inAuthGroup) {
-      router.replace('/(tabs)/home');
+      if (user?.role === 'manager') {
+        router.replace('/(tabs)/dashboard');
+      } else {
+        router.replace('/(tabs)/home');
+      }
     }
-  }, [userToken, isLoading, segments, router]);
+  }, [userToken, isLoading, user, segments, router]);
 
   return <Slot />;
 }

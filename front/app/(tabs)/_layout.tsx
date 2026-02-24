@@ -36,6 +36,7 @@ export default function TabLayout() {
         name="dashboard"
         options={{
           title: 'Stats',
+          // On vérifie que c'est bien 'manager' en minuscule (selon ta DB)
           href: user?.role === 'manager' ? '/dashboard' : null,
           tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart-outline" size={size} color={color} />,
         }}

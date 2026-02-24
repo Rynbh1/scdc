@@ -4,8 +4,34 @@ from db import get_db
 import models
 import requests
 from pydantic import BaseModel
+from services.auth_logic import get_current_user
 
 router = APIRouter(prefix="/products", tags=["Products"])
+
+class ProductUpdate(BaseModel):
+    price: float
+
+@router.put("/update_price/{barcode}")
+def update_price(
+    barcode: str, 
+    item: ProductUpdate, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if current_user.role != "manager":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Seuls les managers peuvent modifier les prix"
+        )
+
+    product = db.query(models.Product).filter(models.Product.off_id == barcode).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Produit non trouvé")
+    
+    product.price = item.price
+    db.commit()
+    db.refresh(product)
+    return {"message": "Prix mis à jour avec succès", "new_price": product.price}
 
 @router.get("/scan/{barcode}")
 def scan_product(barcode: str, db: Session = Depends(get_db)):
@@ -78,8 +104,6 @@ class ProductUpdate(BaseModel):
 def update_price(barcode: str, item: ProductUpdate, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.off_id == barcode).first()
     if not product:
-        # Si le produit venait de la recherche OFF et n'est pas encore en base, il faut le créer
-        # (Cas complexe, pour l'instant assumons qu'on scanne d'abord)
         raise HTTPException(status_code=404, detail="Produit non trouvé en base, scannez-le d'abord")
     
     product.price = item.price
