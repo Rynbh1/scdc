@@ -8,7 +8,6 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { StatusBar } from 'expo-status-bar';
 import { scanProduct, searchProduct } from '../../src/services/ProductService';
 import { useAuth } from '../../src/context/AuthContext';
-import { useCart } from '../../src/context/CartContext';
 
 export default function ScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -24,7 +23,6 @@ export default function ScannerScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const { user } = useAuth();
-  const { addToCart } = useCart();
 
   const handleOpenScanner = async () => {
     if (!permission?.granted) {
@@ -204,7 +202,10 @@ export default function ScannerScreen() {
 
                         <TouchableOpacity 
                             style={styles.addToCartButton}
-                            onPress={() => addToCart(product)}
+                            onPress={() => {
+                                setIsModalVisible(false);
+                                Alert.alert("Panier", "Ajouté (Simulation)");
+                            }}
                         >
                             <Text style={styles.addToCartText}>Ajouter au panier</Text>
                         </TouchableOpacity>
