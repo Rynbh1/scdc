@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Modal, Image, Alert, ActivityIndicator, Keyboard, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { StatusBar } from 'expo-status-bar';
-import { scanProduct, searchProduct, updateProductStock } from '../../src/services/ProductService';
+import { listProducts, scanProduct, searchProduct, updateProductStock } from '../../src/services/ProductService';
 import { useCart } from '../../src/context/CartContext';
 import { useAuth } from '../../src/context/AuthContext';
 
@@ -12,10 +12,12 @@ export default function ScannerScreen() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dbLoading, setDbLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showResultsList, setShowResultsList] = useState(false);
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
 
   const [product, setProduct] = useState<any>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -26,6 +28,22 @@ export default function ScannerScreen() {
   const { addToCart } = useCart();
   const { user } = useAuth();
   const isManager = user?.role === 'manager';
+
+  const loadDbProducts = async () => {
+    setDbLoading(true);
+    try {
+      const data = await listProducts({ page: 1, page_size: 30, sort_by: 'name', sort_order: 'asc' });
+      setDbProducts(data?.items || []);
+    } catch {
+      setDbProducts([]);
+    } finally {
+      setDbLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDbProducts();
+  }, []);
 
   const handleOpenScanner = async () => {
     if (!permission?.granted) {
@@ -58,6 +76,7 @@ export default function ScannerScreen() {
         return;
       }
       openProductModal(scannedProduct);
+      loadDbProducts();
     } catch {
       Alert.alert('Erreur', 'Produit non trouvé.');
     }
@@ -107,8 +126,9 @@ export default function ScannerScreen() {
       setProduct({ ...product, price: parsedPrice, available_quantity: parsedStock, id: res?.product?.id ?? product.id });
       Alert.alert('Succès', 'Produit enregistré en base avec prix et stock.');
       setIsModalVisible(false);
+      loadDbProducts();
     } catch {
-      Alert.alert('Erreur', 'Impossible d\'enregistrer le produit.');
+      Alert.alert('Erreur', "Impossible d'enregistrer le produit.");
     }
   };
 
@@ -167,7 +187,16 @@ export default function ScannerScreen() {
         {loading ? <ActivityIndicator size="large" color="#fff" /> : showResultsList ? (
           <FlatList data={searchResults} keyExtractor={(item, index) => item.off_id || index.toString()} renderItem={renderResultItem} />
         ) : (
-          <TouchableOpacity style={styles.scanButton} onPress={handleOpenScanner}><Text style={styles.scanButtonText}>ACTIVER LA CAMÉRA</Text></TouchableOpacity>
+          <>
+            <TouchableOpacity style={styles.scanButton} onPress={handleOpenScanner}><Text style={styles.scanButtonText}>ACTIVER LA CAMÉRA</Text></TouchableOpacity>
+            <View style={styles.dbHeader}>
+              <Text style={styles.dbTitle}>Produits déjà en base</Text>
+              <TouchableOpacity onPress={loadDbProducts}><Ionicons name="refresh" size={18} color="#fff" /></TouchableOpacity>
+            </View>
+            {dbLoading ? <ActivityIndicator color="#fff" /> : (
+              <FlatList data={dbProducts} keyExtractor={(item) => item.id.toString()} renderItem={renderResultItem} style={{ marginTop: 8 }} />
+            )}
+          </>
         )}
       </View>
 
@@ -217,9 +246,11 @@ const styles = StyleSheet.create({
   searchContainer: { flexDirection: 'row', backgroundColor: '#111', borderRadius: 12, paddingHorizontal: 15, alignItems: 'center', height: 50 },
   searchInput: { flex: 1, color: '#fff' },
   searchIcon: { padding: 5 },
-  content: { flex: 1, justifyContent: 'center' },
-  scanButton: { backgroundColor: '#fff', padding: 18, borderRadius: 30, alignItems: 'center' },
+  content: { flex: 1 },
+  scanButton: { backgroundColor: '#fff', padding: 18, borderRadius: 30, alignItems: 'center', marginBottom: 14 },
   scanButtonText: { color: '#000', fontWeight: '700' },
+  dbHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  dbTitle: { color: '#fff', fontWeight: '700' },
   resultItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', padding: 12, borderRadius: 12, marginBottom: 10 },
   thumbnail: { width: 50, height: 50, borderRadius: 8, backgroundColor: '#fff' },
   resultInfo: { flex: 1, marginLeft: 15 },
