@@ -117,10 +117,10 @@ export default function RegisterScreen() {
           />
 
           <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-            {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.buttonText}>S'inscrire</Text>}
+            {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.buttonText}>S’inscrire</Text>}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/(auth)/login')}>
             <Text style={styles.secondaryButtonText}>Retour à la connexion</Text>
           </TouchableOpacity>
           

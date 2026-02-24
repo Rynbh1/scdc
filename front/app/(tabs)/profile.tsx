@@ -129,11 +129,15 @@ export default function ProfileScreen() {
             ) : (
               invoices.map((item) => (
                 <View key={item.id} style={styles.invoiceItem}>
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={styles.invoiceDate}>Commande #{item.id}</Text>
                     <Text style={styles.invoiceDetails}>{item.items?.length || 0} articles</Text>
+                    <Text style={styles.invoiceDetails}>Paiement PayPal: {item.paypal_id || 'N/A'}</Text>
+                    {(item.items || []).map((detail: any, idx: number) => (
+                      <Text key={`${item.id}-${idx}`} style={styles.invoiceLine}>• {detail.product_name} x{detail.quantity} ({Number(detail.unit_price).toFixed(2)} €)</Text>
+                    ))}
                   </View>
-                  <Text style={styles.invoicePrice}>{item.total_price.toFixed(2)} €</Text>
+                  <Text style={styles.invoicePrice}>{Number(item.total_price).toFixed(2)} €</Text>
                 </View>
               ))
             )}
@@ -171,6 +175,7 @@ const styles = StyleSheet.create({
   invoiceItem: { backgroundColor: '#111', padding: 20, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   invoiceDate: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   invoiceDetails: { color: '#666', fontSize: 13, marginTop: 2 },
+  invoiceLine: { color: '#bbb', fontSize: 12, marginTop: 2 },
   invoicePrice: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   emptyText: { color: '#444', textAlign: 'center', marginTop: 40 },
   logoutButton: { position: 'absolute', bottom: 30, left: 20, right: 20, padding: 18, borderRadius: 12, backgroundColor: '#111', borderWidth: 1, borderColor: '#300', alignItems: 'center' },
