@@ -32,10 +32,10 @@ export default function LoginScreen() {
         const token = String(data.access_token);
         console.log("Token valide extrait, stockage...");
         
-        await signIn(token); 
-        
+        await signIn(token, { role: data.role });
+
         setTimeout(() => {
-          router.replace('/(tabs)/home'); 
+          router.replace(data.role === 'manager' ? '/(tabs)/dashboard' : '/(tabs)/home');
         }, 100);
         
       } else {
