@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, FlatList } from 'react-native';
 import apiClient from '../../src/api/client';
 import { updateProfile } from '../../src/services/AuthService';
 import { useAuth } from '../../src/context/AuthContext';
@@ -7,119 +7,156 @@ import { useAuth } from '../../src/context/AuthContext';
 export default function ProfileScreen() {
   const { signOut } = useAuth();
   const [user, setUser] = useState<any>(null);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'infos' | 'history'>('infos');
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<any>(null);
 
-  const fetchProfile = async () => {
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    setLoading(true);
     try {
-      const response = await apiClient.get('/auth/me');
-      setUser(response.data);
-      setEditedUser(response.data);
+      const [profileRes, historyRes] = await Promise.all([
+        apiClient.get('/auth/me'),
+        apiClient.get('/invoices/me')
+      ]);
+      setUser(profileRes.data);
+      setEditedUser(profileRes.data);
+      setInvoices(historyRes.data);
     } catch (error) {
-      console.error("Fetch profile error:", error);
-      Alert.alert("Erreur", "Impossible de charger le profil");
+      console.error(error);
+      Alert.alert("Erreur", "Impossible de charger les données");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
   const handleSave = async () => {
-    setLoading(true);
     try {
       const updated = await updateProfile(editedUser);
       setUser(updated);
       setIsEditing(false);
-      Alert.alert("Succès", "Profil mis à jour !");
+      Alert.alert("Succès", "Profil mis à jour");
     } catch (error) {
-      Alert.alert("Erreur", "La mise à jour a échoué");
-    } finally {
-      setLoading(false);
+      Alert.alert("Erreur", "Échec de la mise à jour");
     }
   };
 
-  // 1. Affiche un loader tant que les données ne sont pas là
-  if (loading || !user || !editedUser) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color="#fff" />
-      </View>
-    );
+  if (loading || !user) {
+    return <View style={styles.centered}><ActivityIndicator color="#fff" size="large" /></View>;
   }
 
-  const fields = [
-    { label: 'Prénom', key: 'first_name' },
-    { label: 'Nom', key: 'last_name' },
-    { label: 'Téléphone', key: 'phone_number' },
-    { label: 'Adresse', key: 'address' },
-    { label: 'Ville', key: 'city' },
-    { label: 'Code Postal', key: 'zip_code' },
-  ];
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={styles.title}>Mon Profil</Text>
+    <View style={styles.container}>
+      <Text style={styles.headerTitle}>Mon Compte</Text>
 
-      <View style={styles.card}>
-        {fields.map((field) => (
-          <View key={field.key} style={styles.inputGroup}>
-            <Text style={styles.label}>{field.label}</Text>
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={editedUser[field.key] || ''}
-                onChangeText={(val) => setEditedUser({ ...editedUser, [field.key]: val })}
-                placeholderTextColor="#666"
-                placeholder={`Entrez votre ${field.label.toLowerCase()}`}
-              />
-            ) : (
-              <Text style={styles.value}>{user[field.key] || 'Non renseigné'}</Text>
+      <View style={styles.tabBar}>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'infos' && styles.activeTab]} 
+          onPress={() => setActiveTab('infos')}
+        >
+          <Text style={[styles.tabText, activeTab === 'infos' && styles.activeTabText]}>Mes Infos</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'history' && styles.activeTab]} 
+          onPress={() => setActiveTab('history')}
+        >
+          <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>Historique</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {activeTab === 'infos' ? (
+          <View style={styles.card}>
+            {[
+              { label: 'Prénom', key: 'first_name' },
+              { label: 'Nom', key: 'last_name' },
+              { label: 'Téléphone', key: 'phone_number' },
+              { label: 'Adresse', key: 'address' },
+              { label: 'Ville', key: 'city' },
+            ].map(field => (
+              <View key={field.key} style={styles.inputGroup}>
+                <Text style={styles.label}>{field.label}</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={styles.input}
+                    value={editedUser[field.key] || ''}
+                    onChangeText={(val) => setEditedUser({ ...editedUser, [field.key]: val })}
+                    placeholderTextColor="#444"
+                  />
+                ) : (
+                  <Text style={styles.value}>{user[field.key] || 'Non renseigné'}</Text>
+                )}
+              </View>
+            ))}
+            
+            <TouchableOpacity 
+              style={[styles.mainButton, isEditing ? styles.saveBtn : styles.editBtn]} 
+              onPress={isEditing ? handleSave : () => setIsEditing(true)}
+            >
+              <Text style={styles.mainButtonText}>{isEditing ? "Enregistrer" : "Modifier mes informations"}</Text>
+            </TouchableOpacity>
+            {isEditing && (
+              <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelBtn}>
+                <Text style={{color: '#666'}}>Annuler</Text>
+              </TouchableOpacity>
             )}
           </View>
-        ))}
-
-        <TouchableOpacity 
-          style={[styles.button, isEditing ? styles.saveButton : styles.editButton]} 
-          onPress={isEditing ? handleSave : () => setIsEditing(true)}
-        >
-          <Text style={styles.buttonText}>{isEditing ? 'Enregistrer' : 'Modifier les infos'}</Text>
-        </TouchableOpacity>
-
-        {isEditing && (
-          <TouchableOpacity style={styles.cancelButton} onPress={() => {
-            setEditedUser(user); // Reset les modifs
-            setIsEditing(false);
-          }}>
-            <Text style={styles.cancelText}>Annuler</Text>
-          </TouchableOpacity>
+        ) : (
+          <View>
+            {invoices.length === 0 ? (
+              <Text style={styles.emptyText}>Aucune commande pour le moment.</Text>
+            ) : (
+              invoices.map((item) => (
+                <View key={item.id} style={styles.invoiceItem}>
+                  <View>
+                    <Text style={styles.invoiceDate}>Commande #{item.id}</Text>
+                    <Text style={styles.invoiceDetails}>{item.items?.length || 0} articles</Text>
+                  </View>
+                  <Text style={styles.invoicePrice}>{item.total_price.toFixed(2)} €</Text>
+                </View>
+              ))
+            )}
+          </View>
         )}
-      </View>
+      </ScrollView>
 
       <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
         <Text style={styles.logoutText}>Se déconnecter</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000', padding: 20, paddingTop: 60 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
-  card: { backgroundColor: '#111', borderRadius: 15, padding: 20, borderWidth: 1, borderColor: '#222' },
-  inputGroup: { marginBottom: 15 },
-  label: { color: '#666', fontSize: 12, marginBottom: 5, textTransform: 'uppercase' },
-  value: { color: '#fff', fontSize: 16 },
-  input: { backgroundColor: '#222', color: '#fff', padding: 12, borderRadius: 8, fontSize: 16 },
-  button: { padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
-  editButton: { backgroundColor: '#fff' },
-  saveButton: { backgroundColor: '#4CAF50' },
-  buttonText: { fontWeight: 'bold', color: '#000' },
-  cancelButton: { marginTop: 15, alignItems: 'center' },
-  cancelText: { color: '#ff4444' },
-  logoutButton: { marginTop: 40, padding: 15, alignItems: 'center' },
-  logoutText: { color: '#ff4444', fontSize: 16, fontWeight: '600' }
+  container: { flex: 1, backgroundColor: '#000', paddingTop: 60 },
+  centered: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 32, fontWeight: 'bold', color: '#fff', paddingHorizontal: 20, marginBottom: 20 },
+  tabBar: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 20, gap: 10 },
+  tab: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#111' },
+  activeTab: { backgroundColor: '#fff' },
+  tabText: { color: '#888', fontWeight: '600' },
+  activeTabText: { color: '#000' },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
+  card: { backgroundColor: '#111', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#222' },
+  inputGroup: { marginBottom: 20 },
+  label: { color: '#555', fontSize: 11, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 1 },
+  value: { color: '#fff', fontSize: 17 },
+  input: { color: '#fff', fontSize: 17, borderBottomWidth: 1, borderBottomColor: '#333', paddingVertical: 4 },
+  mainButton: { padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
+  editBtn: { backgroundColor: '#222' },
+  saveBtn: { backgroundColor: '#fff' },
+  mainButtonText: { fontWeight: '700', color: '#fff' },
+  cancelBtn: { alignItems: 'center', marginTop: 15 },
+  invoiceItem: { backgroundColor: '#111', padding: 20, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  invoiceDate: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  invoiceDetails: { color: '#666', fontSize: 13, marginTop: 2 },
+  invoicePrice: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  emptyText: { color: '#444', textAlign: 'center', marginTop: 40 },
+  logoutButton: { position: 'absolute', bottom: 30, left: 20, right: 20, padding: 18, borderRadius: 12, backgroundColor: '#111', borderWidth: 1, borderColor: '#300', alignItems: 'center' },
+  logoutText: { color: '#ff4444', fontWeight: 'bold' }
 });

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import List, Optional
+from datetime import datetime
 
 class UserCreate(BaseModel):
     first_name: str
@@ -35,6 +36,26 @@ class UserUpdate(BaseModel):
     zip_code: Optional[str] = None
     city: Optional[str] = None
     country: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class InvoiceItemOut(BaseModel):
+    id: int
+    product_id: int
+    product_name: str
+    quantity: int
+    unit_price: float
+
+    class Config:
+        from_attributes = True
+
+class InvoiceOut(BaseModel):
+    id: int
+    date: datetime
+    total_price: float
+    user_id: int
+    items: List[InvoiceItemOut] = []
 
     class Config:
         from_attributes = True
