@@ -12,6 +12,7 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<'infos' | 'history'>('infos');
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<any>(null);
+  const isManager = user?.role === 'manager';
 
   const fetchInitialData = useCallback(async () => {
     setLoading(true);
@@ -42,6 +43,12 @@ export default function ProfileScreen() {
     }
   }, [userToken, fetchInitialData]);
 
+  useEffect(() => {
+    if (isManager && activeTab === 'history') {
+      setActiveTab('infos');
+    }
+  }, [isManager, activeTab]);
+
   const handleSave = async () => {
     try {
       const updated = await updateProfile(editedUser);
@@ -68,12 +75,14 @@ export default function ProfileScreen() {
         >
           <Text style={[styles.tabText, activeTab === 'infos' && styles.activeTabText]}>Mes Infos</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'history' && styles.activeTab]} 
-          onPress={() => setActiveTab('history')}
-        >
-          <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>Historique</Text>
-        </TouchableOpacity>
+        {!isManager && (
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'history' && styles.activeTab]} 
+            onPress={() => setActiveTab('history')}
+          >
+            <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>Historique</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
