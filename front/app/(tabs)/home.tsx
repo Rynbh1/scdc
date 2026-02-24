@@ -222,6 +222,9 @@ export default function ScannerScreen() {
                   <Image source={{ uri: product.picture || 'https://via.placeholder.com/150' }} style={styles.productImage} />
                   <Text style={styles.productName}>{product.name}</Text>
                   <Text style={styles.productBrand}>{product.brand}</Text>
+                  <Text style={styles.info}>Marque: {product.brand || 'N/A'}</Text>
+                  <Text style={styles.info}>Catégorie: {product.category || 'N/A'}</Text>
+                  <Text style={styles.info}>Infos nutritionnelles: {product.nutritional_info || 'N/A'}</Text>
                   {isManager ? (
                     <>
                       <TextInput style={styles.input} value={managerPrice} onChangeText={setManagerPrice} placeholder="Prix (€)" keyboardType="numeric" placeholderTextColor="#666" />
