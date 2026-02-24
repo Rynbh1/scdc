@@ -6,6 +6,7 @@ from jose import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from db import get_db
+from jose import JWTError, jwt
 
 SECRET_KEY = "TRINITY_SUPER_SECRET_KEY" 
 ALGORITHM = "HS256"

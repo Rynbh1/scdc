@@ -27,3 +27,13 @@ export const registerUser = async (userData: any) => {
     throw error;
   }
 };
+
+export const updateProfile = async (userData: any) => {
+  try {
+    const response = await apiClient.put('/auth/me', userData);
+    return response.data;
+  } catch (error) {
+    console.error("Erreur Update Profile:", error);
+    throw error;
+  }
+};

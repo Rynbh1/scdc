@@ -57,3 +57,21 @@ def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = 
 @router.get("/me", response_model=schemas.UserOut)
 async def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+@router.put("/me", response_model=schemas.UserOut)
+async def update_user_profile(
+    user_update: schemas.UserUpdate, 
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # On récupère l'utilisateur en base
+    db_user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    
+    # On met à jour seulement les champs envoyés (non None)
+    update_data = user_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
+    
+    db.commit()
+    db.refresh(db_user)
+    return db_user
