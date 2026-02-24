@@ -11,6 +11,7 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 LOYALTY_MIN_PURCHASES = 2
 
 
+@router.get("")
 @router.get("/")
 def read_reports(
     db: Session = Depends(get_db),

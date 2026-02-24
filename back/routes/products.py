@@ -104,6 +104,7 @@ def create_product(
     return new_product
 
 
+@router.get("")
 @router.get("/")
 def list_products(
     db: Session = Depends(get_db),
