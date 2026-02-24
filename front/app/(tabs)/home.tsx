@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Modal, Image, Alert, ActivityIndicator, Keyboard, FlatList } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Modal, Image, Alert, ActivityIndicator, Keyboard, FlatList, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { StatusBar } from 'expo-status-bar';
@@ -10,7 +10,6 @@ import { useAuth } from '../../src/context/AuthContext';
 export default function ScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);
 
@@ -24,6 +23,8 @@ export default function ScannerScreen() {
   const [quantityInput, setQuantityInput] = useState('1');
   const [managerPrice, setManagerPrice] = useState('');
   const [managerStock, setManagerStock] = useState('0');
+
+  const scanInProgressRef = useRef(false);
 
   const { addToCart } = useCart();
   const { user } = useAuth();
@@ -53,7 +54,7 @@ export default function ScannerScreen() {
         return;
       }
     }
-    setScanned(false);
+    scanInProgressRef.current = false;
     setIsCameraOpen(true);
   };
 
@@ -66,7 +67,8 @@ export default function ScannerScreen() {
   };
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    setScanned(true);
+    if (scanInProgressRef.current) return;
+    scanInProgressRef.current = true;
     setIsCameraOpen(false);
 
     try {
@@ -79,6 +81,10 @@ export default function ScannerScreen() {
       loadDbProducts();
     } catch {
       Alert.alert('Erreur', 'Produit non trouvé.');
+    } finally {
+      setTimeout(() => {
+        scanInProgressRef.current = false;
+      }, 500);
     }
   };
 
@@ -171,71 +177,73 @@ export default function ScannerScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-      <View style={styles.header}>
-        <Text style={styles.title}>Scanner</Text>
-        <View style={styles.searchContainer}>
-          <TextInput style={styles.searchInput} placeholder="Rechercher (riz, coca...)" placeholderTextColor="#666" value={searchQuery} onChangeText={setSearchQuery} onSubmitEditing={handleSearch} returnKeyType="search" />
-          <TouchableOpacity onPress={searchQuery.length > 0 ? () => setSearchQuery('') : handleSearch} style={styles.searchIcon}>
-            <Ionicons name={searchQuery.length > 0 ? 'close-circle' : 'search'} size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.content}>
-        {loading ? <ActivityIndicator size="large" color="#fff" /> : showResultsList ? (
-          <FlatList data={searchResults} keyExtractor={(item, index) => item.off_id || index.toString()} renderItem={renderResultItem} />
-        ) : (
-          <>
-            <TouchableOpacity style={styles.scanButton} onPress={handleOpenScanner}><Text style={styles.scanButtonText}>ACTIVER LA CAMÉRA</Text></TouchableOpacity>
-            <View style={styles.dbHeader}>
-              <Text style={styles.dbTitle}>Produits déjà en base</Text>
-              <TouchableOpacity onPress={loadDbProducts}><Ionicons name="refresh" size={18} color="#fff" /></TouchableOpacity>
-            </View>
-            {dbLoading ? <ActivityIndicator color="#fff" /> : (
-              <FlatList data={dbProducts} keyExtractor={(item) => item.id.toString()} renderItem={renderResultItem} style={{ marginTop: 8 }} />
-            )}
-          </>
-        )}
-      </View>
-
-      <Modal visible={isCameraOpen} animationType="slide">
-        <View style={{ flex: 1, backgroundColor: 'black' }}>
-          <CameraView style={StyleSheet.absoluteFillObject} facing="back" onBarcodeScanned={scanned ? undefined : handleBarCodeScanned} />
-          <TouchableOpacity style={styles.closeButton} onPress={() => setIsCameraOpen(false)}><Ionicons name="close" size={30} color="#000" /></TouchableOpacity>
-        </View>
-      </Modal>
-
-      <Modal visible={isModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            {product && (
-              <>
-                <Image source={{ uri: product.picture || 'https://via.placeholder.com/150' }} style={styles.productImage} />
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productBrand}>{product.brand}</Text>
-                {isManager ? (
-                  <>
-                    <TextInput style={styles.input} value={managerPrice} onChangeText={setManagerPrice} placeholder="Prix (€)" keyboardType="numeric" placeholderTextColor="#666" />
-                    <TextInput style={styles.input} value={managerStock} onChangeText={setManagerStock} placeholder="Stock" keyboardType="numeric" placeholderTextColor="#666" />
-                    <TouchableOpacity style={styles.addToCartButton} onPress={handleManagerSave}><Text style={styles.addToCartText}>Enregistrer en base</Text></TouchableOpacity>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.info}>Prix: {Number(product.price || 0).toFixed(2)} €</Text>
-                    <Text style={styles.info}>Stock: {product.available_quantity ?? 0}</Text>
-                    <TextInput style={styles.input} value={quantityInput} onChangeText={setQuantityInput} placeholder="Quantité" keyboardType="numeric" placeholderTextColor="#666" />
-                    <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}><Text style={styles.addToCartText}>Ajouter au panier</Text></TouchableOpacity>
-                  </>
-                )}
-                <TouchableOpacity onPress={() => setIsModalVisible(false)} style={{ marginTop: 12 }}><Text style={{ color: '#666' }}>Fermer</Text></TouchableOpacity>
-              </>
-            )}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        <View style={styles.header}>
+          <Text style={styles.title}>Scanner</Text>
+          <View style={styles.searchContainer}>
+            <TextInput style={styles.searchInput} placeholder="Rechercher (riz, coca...)" placeholderTextColor="#666" value={searchQuery} onChangeText={setSearchQuery} onSubmitEditing={handleSearch} returnKeyType="search" />
+            <TouchableOpacity onPress={searchQuery.length > 0 ? () => setSearchQuery('') : handleSearch} style={styles.searchIcon}>
+              <Ionicons name={searchQuery.length > 0 ? 'close-circle' : 'search'} size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    </View>
+
+        <View style={styles.content}>
+          {loading ? <ActivityIndicator size="large" color="#fff" /> : showResultsList ? (
+            <FlatList data={searchResults} keyExtractor={(item, index) => item.off_id || index.toString()} renderItem={renderResultItem} keyboardShouldPersistTaps="handled" />
+          ) : (
+            <>
+              <TouchableOpacity style={styles.scanButton} onPress={handleOpenScanner}><Text style={styles.scanButtonText}>ACTIVER LA CAMÉRA</Text></TouchableOpacity>
+              <View style={styles.dbHeader}>
+                <Text style={styles.dbTitle}>Produits déjà en base</Text>
+                <TouchableOpacity onPress={loadDbProducts}><Ionicons name="refresh" size={18} color="#fff" /></TouchableOpacity>
+              </View>
+              {dbLoading ? <ActivityIndicator color="#fff" /> : (
+                <FlatList data={dbProducts} keyExtractor={(item) => item.id.toString()} renderItem={renderResultItem} style={{ marginTop: 8 }} keyboardShouldPersistTaps="handled" />
+              )}
+            </>
+          )}
+        </View>
+
+        <Modal visible={isCameraOpen} animationType="slide">
+          <View style={{ flex: 1, backgroundColor: 'black' }}>
+            <CameraView style={StyleSheet.absoluteFillObject} facing="back" onBarcodeScanned={handleBarCodeScanned} />
+            <TouchableOpacity style={styles.closeButton} onPress={() => setIsCameraOpen(false)}><Ionicons name="close" size={30} color="#000" /></TouchableOpacity>
+          </View>
+        </Modal>
+
+        <Modal visible={isModalVisible} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              {product && (
+                <>
+                  <Image source={{ uri: product.picture || 'https://via.placeholder.com/150' }} style={styles.productImage} />
+                  <Text style={styles.productName}>{product.name}</Text>
+                  <Text style={styles.productBrand}>{product.brand}</Text>
+                  {isManager ? (
+                    <>
+                      <TextInput style={styles.input} value={managerPrice} onChangeText={setManagerPrice} placeholder="Prix (€)" keyboardType="numeric" placeholderTextColor="#666" />
+                      <TextInput style={styles.input} value={managerStock} onChangeText={setManagerStock} placeholder="Stock" keyboardType="numeric" placeholderTextColor="#666" />
+                      <TouchableOpacity style={styles.addToCartButton} onPress={handleManagerSave}><Text style={styles.addToCartText}>Enregistrer en base</Text></TouchableOpacity>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.info}>Prix: {Number(product.price || 0).toFixed(2)} €</Text>
+                      <Text style={styles.info}>Stock: {product.available_quantity ?? 0}</Text>
+                      <TextInput style={styles.input} value={quantityInput} onChangeText={setQuantityInput} placeholder="Quantité" keyboardType="numeric" placeholderTextColor="#666" />
+                      <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}><Text style={styles.addToCartText}>Ajouter au panier</Text></TouchableOpacity>
+                    </>
+                  )}
+                  <TouchableOpacity onPress={() => setIsModalVisible(false)} style={{ marginTop: 12 }}><Text style={{ color: '#666' }}>Fermer</Text></TouchableOpacity>
+                </>
+              )}
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 

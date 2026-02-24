@@ -20,6 +20,7 @@ def _ensure_manager(current_user: models.User):
         )
 
 
+@router.get("")
 @router.get("/")
 def list_users(
     db: Session = Depends(get_db),
@@ -84,6 +85,7 @@ def get_user_detail(
     }
 
 
+@router.post("", status_code=status.HTTP_201_CREATED)
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_user(
     payload: dict,
