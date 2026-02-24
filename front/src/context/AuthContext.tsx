@@ -43,13 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (userToken && inAuthGroup) {
       const target =
         user?.role === 'manager'
-          ? '/dashboard'
+          ? '/(tabs)/dashboard'
           : '/(tabs)/home';
 
       router.replace(target);
     }
 
-  }, [userToken, isLoading]);
+  }, [userToken, user, isLoading, segments, router]);
 
 
   const signIn = async (token: string) => {

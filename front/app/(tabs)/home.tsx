@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { StatusBar } from 'expo-status-bar';
 import { scanProduct, searchProduct } from '../../src/services/ProductService';
-import { useAuth } from '../../src/context/AuthContext';
 import { useCart } from '../../src/context/CartContext';
 
 export default function ScannerScreen() {
@@ -23,7 +22,6 @@ export default function ScannerScreen() {
   const [product, setProduct] = useState<any>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const { user } = useAuth();
   const { addToCart } = useCart();
 
   const handleOpenScanner = async () => {
@@ -38,20 +36,26 @@ export default function ScannerScreen() {
     setIsCameraOpen(true);
   };
 
-  const handleBarCodeScanned = async ({ data }) => {
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    setScanned(true);
+    setIsCameraOpen(false);
+
     try {
-      // 1. Récupérer le produit depuis ton API
-      const product = await ProductService.getProductById(data);
-      // 2. L'ajouter au panier
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1
-      });
-      alert(`${product.name} ajouté !`);
-    } catch (err) {
-      console.error("Produit non trouvé");
+      const scannedProduct = await scanProduct(data);
+
+      if (!scannedProduct) {
+        Alert.alert('Inconnu', 'Produit non trouvé.');
+        return;
+      }
+
+      setProduct(scannedProduct);
+      setIsModalVisible(true);
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        Alert.alert('Session expirée', 'Veuillez vous reconnecter.');
+      } else {
+        Alert.alert('Erreur', 'Produit non trouvé.');
+      }
     }
   };
 
@@ -82,8 +86,12 @@ export default function ScannerScreen() {
           Alert.alert("Oups", "Aucun produit trouvé pour cette recherche.");
         }
       }
-    } catch (error) {
-      Alert.alert("Erreur", "Problème de connexion.");
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        Alert.alert('Session expirée', 'Veuillez vous reconnecter.');
+      } else {
+        Alert.alert("Erreur", "Problème de connexion.");
+      }
     } finally {
       setLoading(false);
     }

@@ -3,9 +3,9 @@ import { useAuth } from '../src/context/AuthContext';
 import { View, ActivityIndicator } from 'react-native';
 
 export default function Index() {
-  const { user, loading } = useAuth();
+  const { userToken, isLoading } = useAuth();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#fff" />
@@ -13,5 +13,5 @@ export default function Index() {
     );
   }
 
-  return <Redirect href="/(auth)/login" />;
+  return <Redirect href={userToken ? '/(tabs)/home' : '/(auth)/login'} />;
 }
