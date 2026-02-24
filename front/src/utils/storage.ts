@@ -16,6 +16,11 @@ export const tokenStorage = {
         valueToStore = JSON.stringify(value);
       }
 
+      if (Platform.OS === 'web') {
+        localStorage.setItem(key, valueToStore);
+        return;
+      }
+
       await SecureStore.setItemAsync(key, valueToStore);
     } catch (error) {
       console.error("Erreur fatale SecureStore SetItem:", error);

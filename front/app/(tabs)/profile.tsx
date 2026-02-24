@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, FlatList } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import apiClient from '../../src/api/client';
 import { updateProfile } from '../../src/services/AuthService';
 import { useAuth } from '../../src/context/AuthContext';
 
 export default function ProfileScreen() {
-  const { signOut } = useAuth();
+  const { signOut, userToken } = useAuth();
   const [user, setUser] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,11 +13,7 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<any>(null);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     setLoading(true);
     try {
       const [profileRes, historyRes] = await Promise.all([
@@ -27,13 +23,24 @@ export default function ProfileScreen() {
       setUser(profileRes.data);
       setEditedUser(profileRes.data);
       setInvoices(historyRes.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      Alert.alert("Erreur", "Impossible de charger les données");
+      if (error?.response?.status === 401) {
+        Alert.alert('Session expirée', 'Veuillez vous reconnecter.');
+        await signOut();
+      } else {
+        Alert.alert("Erreur", "Impossible de charger les données");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [signOut]);
+
+  useEffect(() => {
+    if (userToken) {
+      fetchInitialData();
+    }
+  }, [userToken, fetchInitialData]);
 
   const handleSave = async () => {
     try {
@@ -41,7 +48,7 @@ export default function ProfileScreen() {
       setUser(updated);
       setIsEditing(false);
       Alert.alert("Succès", "Profil mis à jour");
-    } catch (error) {
+    } catch {
       Alert.alert("Erreur", "Échec de la mise à jour");
     }
   };
