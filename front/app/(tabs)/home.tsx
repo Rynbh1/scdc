@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Modal, Image, Alert, ActivityIndicator, Keyboard, FlatList, TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet, Text,  KeyboardAvoidingView, ScrollView, Platform, View, TouchableOpacity, TextInput, Modal, Image, Alert, ActivityIndicator, Keyboard, FlatList, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { StatusBar } from 'expo-status-bar';
@@ -214,36 +214,82 @@ export default function ScannerScreen() {
           </View>
         </Modal>
 
-        <Modal visible={isModalVisible} transparent animationType="fade">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalCard}>
-              {product && (
-                <>
-                  <Image source={{ uri: product.picture || 'https://via.placeholder.com/150' }} style={styles.productImage} />
-                  <Text style={styles.productName}>{product.name}</Text>
-                  <Text style={styles.productBrand}>{product.brand}</Text>
-                  <Text style={styles.info}>Marque: {product.brand || 'N/A'}</Text>
-                  <Text style={styles.info}>Catégorie: {product.category || 'N/A'}</Text>
-                  <Text style={styles.info}>Infos nutritionnelles: {product.nutritional_info || 'N/A'}</Text>
-                  {isManager ? (
-                    <>
-                      <TextInput style={styles.input} value={managerPrice} onChangeText={setManagerPrice} placeholder="Prix (€)" keyboardType="numeric" placeholderTextColor="#666" />
-                      <TextInput style={styles.input} value={managerStock} onChangeText={setManagerStock} placeholder="Stock" keyboardType="numeric" placeholderTextColor="#666" />
-                      <TouchableOpacity style={styles.addToCartButton} onPress={handleManagerSave}><Text style={styles.addToCartText}>Enregistrer en base</Text></TouchableOpacity>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={styles.info}>Prix: {Number(product.price || 0).toFixed(2)} €</Text>
-                      <Text style={styles.info}>Stock: {product.available_quantity ?? 0}</Text>
-                      <TextInput style={styles.input} value={quantityInput} onChangeText={setQuantityInput} placeholder="Quantité" keyboardType="numeric" placeholderTextColor="#666" />
-                      <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}><Text style={styles.addToCartText}>Ajouter au panier</Text></TouchableOpacity>
-                    </>
-                  )}
-                  <TouchableOpacity onPress={() => setIsModalVisible(false)} style={{ marginTop: 12 }}><Text style={{ color: '#666' }}>Fermer</Text></TouchableOpacity>
-                </>
-              )}
+        <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => setIsModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ width: '100%', alignItems: 'center' }}
+              >
+                <View style={styles.modalCard}>
+                  <ScrollView 
+                    contentContainerStyle={{ alignItems: 'center' }} 
+                    style={{ width: '100%' }}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {product && (
+                      <>
+                        <Image source={{ uri: product.picture || 'https://via.placeholder.com/150' }} style={styles.productImage} />
+                        <Text style={styles.productName}>{product.name}</Text>
+                        <Text style={styles.productBrand}>{product.brand}</Text>
+                        
+                        <View style={{ width: '100%', marginBottom: 10 }}>
+                          <Text style={styles.info}>Marque: {product.brand || 'N/A'}</Text>
+                          <Text style={styles.info}>Catégorie: {product.category || 'N/A'}</Text>
+                          <Text style={styles.info}>Infos nutritionnelles: {product.nutritional_info || 'N/A'}</Text>
+                        </View>
+
+                        {isManager ? (
+                          <>
+                            <TextInput 
+                              style={styles.input} 
+                              value={managerPrice} 
+                              onChangeText={setManagerPrice} 
+                              placeholder="Prix (€)" 
+                              keyboardType="numeric" 
+                              placeholderTextColor="#666" 
+                            />
+                            <TextInput 
+                              style={styles.input} 
+                              value={managerStock} 
+                              onChangeText={setManagerStock} 
+                              placeholder="Stock" 
+                              keyboardType="numeric" 
+                              placeholderTextColor="#666" 
+                            />
+                            <TouchableOpacity style={styles.addToCartButton} onPress={handleManagerSave}>
+                              <Text style={styles.addToCartText}>Enregistrer en base</Text>
+                            </TouchableOpacity>
+                          </>
+                        ) : (
+                          <>
+                            <Text style={styles.info}>Prix: {Number(product.price || 0).toFixed(2)} €</Text>
+                            <Text style={styles.info}>Stock: {product.available_quantity ?? 0}</Text>
+                            <TextInput 
+                              style={styles.input} 
+                              value={quantityInput} 
+                              onChangeText={setQuantityInput} 
+                              placeholder="Quantité" 
+                              keyboardType="numeric" 
+                              placeholderTextColor="#666" 
+                            />
+                            <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
+                              <Text style={styles.addToCartText}>Ajouter au panier</Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
+                        
+                        <TouchableOpacity onPress={() => setIsModalVisible(false)} style={{ marginTop: 15, padding: 10 }}>
+                          <Text style={{ color: '#888' }}>Fermer</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </ScrollView>
+                </View>
+              </KeyboardAvoidingView>
             </View>
-          </View>
+          </TouchableWithoutFeedback>
         </Modal>
       </View>
     </TouchableWithoutFeedback>
