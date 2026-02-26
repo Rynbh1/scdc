@@ -1,13 +1,66 @@
 import apiClient from '../api/client';
+import { getCache, setCache } from './cache';
+
+export type ProductApiErrorCode = 'PRODUCT_NOT_FOUND' | 'SCAN_SERVICE_UNAVAILABLE' | 'UNKNOWN';
+
+export class ProductApiError extends Error {
+  constructor(public code: ProductApiErrorCode, message: string) {
+    super(message);
+  }
+}
+
+const ONE_HOUR = 60 * 60 * 1000;
+
+const toSafeKey = (value: string) => value.trim().toLowerCase();
+
+const mapApiError = (error: any): ProductApiError => {
+  const detail = error?.response?.data?.detail;
+  if (detail?.code === 'PRODUCT_NOT_FOUND') {
+    return new ProductApiError('PRODUCT_NOT_FOUND', detail.message);
+  }
+  if (detail?.code === 'SCAN_SERVICE_UNAVAILABLE') {
+    return new ProductApiError('SCAN_SERVICE_UNAVAILABLE', detail.message);
+  }
+  return new ProductApiError('UNKNOWN', 'Une erreur réseau est survenue.');
+};
 
 export const scanProduct = async (barcode: string) => {
-  const response = await apiClient.get(`/products/scan/${barcode}`);
-  return response.data;
+  const cacheKey = `scan:${toSafeKey(barcode)}`;
+  try {
+    const response = await apiClient.get(`/products/scan/${barcode}`);
+    await setCache(cacheKey, response.data);
+    return response.data;
+  } catch (error) {
+    const cached = await getCache<any>(cacheKey, ONE_HOUR);
+    if (cached) return cached;
+    throw mapApiError(error);
+  }
 };
 
 export const searchProduct = async (query: string) => {
-  const response = await apiClient.get(`/products/search/${query}`);
-  return response.data;
+  const cacheKey = `search:${toSafeKey(query)}`;
+  try {
+    const response = await apiClient.get(`/products/search/${query}`);
+    await setCache(cacheKey, response.data);
+    return response.data;
+  } catch {
+    const cached = await getCache<any[]>(cacheKey, ONE_HOUR);
+    if (cached) return cached;
+    throw new ProductApiError('UNKNOWN', 'Problème de connexion.');
+  }
+};
+
+export const getRecommendations = async (params?: { category?: string; limit?: number }) => {
+  const cacheKey = `recommendations:${JSON.stringify(params || {})}`;
+  try {
+    const response = await apiClient.get('/products/recommendations', { params });
+    await setCache(cacheKey, response.data);
+    return response.data;
+  } catch {
+    const cached = await getCache<any>(cacheKey, ONE_HOUR);
+    if (cached) return cached;
+    throw new ProductApiError('UNKNOWN', 'Impossible de charger les recommandations.');
+  }
 };
 
 export const advancedSearchProducts = async (params: {
@@ -27,8 +80,16 @@ export const advancedSearchProducts = async (params: {
 };
 
 export const listProducts = async (params?: Record<string, any>) => {
-  const response = await apiClient.get('/products', { params });
-  return response.data;
+  const cacheKey = `list:${JSON.stringify(params || {})}`;
+  try {
+    const response = await apiClient.get('/products', { params });
+    await setCache(cacheKey, response.data);
+    return response.data;
+  } catch {
+    const cached = await getCache<any>(cacheKey, ONE_HOUR);
+    if (cached) return cached;
+    throw new ProductApiError('UNKNOWN', 'Impossible de charger le stock.');
+  }
 };
 
 export const createProduct = async (payload: {

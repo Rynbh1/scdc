@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from db import get_db
 import models
 from services.auth_logic import get_current_user
+from services.product_recommendation import recommend_products
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
@@ -181,6 +182,23 @@ def advanced_search_products(
     )
 
 
+
+
+@router.get("/recommendations")
+def get_recommendations(
+    db: Session = Depends(get_db),
+    limit: int = Query(default=5, ge=1, le=20),
+    category: Optional[str] = None,
+):
+    query = db.query(models.Product).filter(models.Product.available_quantity > 0)
+
+    if category:
+        query = query.filter(models.Product.category.ilike(f"%{category}%"))
+
+    recommended = recommend_products(query.all(), limit=limit)
+    return {"items": recommended, "total": len(recommended)}
+
+
 @router.get("/scan/{barcode}")
 def scan_product(barcode: str, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.off_id == barcode).first()
@@ -189,10 +207,18 @@ def scan_product(barcode: str, db: Session = Depends(get_db)):
 
     try:
         return _fetch_from_openfoodfacts(barcode, db)
-    except HTTPException:
+    except HTTPException as exc:
+        if exc.status_code == 404:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "PRODUCT_NOT_FOUND", "message": "Produit introuvable dans le stock local et Open Food Facts"},
+            )
         raise
     except Exception:
-        raise HTTPException(status_code=404, detail="Erreur lors de la récupération")
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "SCAN_SERVICE_UNAVAILABLE", "message": "Service de scan indisponible"},
+        )
 
 
 @router.get("/search/{query}")
