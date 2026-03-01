@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Switch } from 'react-native';
 import apiClient from '../../src/api/client';
 import { updateProfile } from '../../src/services/AuthService';
 import { useAuth } from '../../src/context/AuthContext';
@@ -9,9 +9,15 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'infos' | 'history'>('infos');
+  const [activeTab, setActiveTab] = useState<'infos' | 'history' | 'settings'>('infos');
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<any>(null);
+  const [refreshingHistory, setRefreshingHistory] = useState(false);
+  const [accessibilitySettings, setAccessibilitySettings] = useState({
+    highContrast: false,
+    largeText: false,
+    reduceAnimations: false,
+  });
   const isManager = user?.role === 'manager';
 
   const fetchInitialData = useCallback(async () => {
@@ -60,6 +66,18 @@ export default function ProfileScreen() {
     }
   };
 
+  const refreshHistory = async () => {
+    setRefreshingHistory(true);
+    try {
+      const historyRes = await apiClient.get('/invoices/me');
+      setInvoices(historyRes.data);
+    } catch {
+      Alert.alert('Erreur', "Impossible d'actualiser l'historique.");
+    } finally {
+      setRefreshingHistory(false);
+    }
+  };
+
   if (loading || !user) {
     return <View style={styles.centered}><ActivityIndicator color="#fff" size="large" /></View>;
   }
@@ -76,12 +94,20 @@ export default function ProfileScreen() {
           <Text style={[styles.tabText, activeTab === 'infos' && styles.activeTabText]}>Mes Infos</Text>
         </TouchableOpacity>
         {!isManager && (
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'history' && styles.activeTab]} 
-            onPress={() => setActiveTab('history')}
-          >
-            <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>Historique</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'history' && styles.activeTab]} 
+              onPress={() => setActiveTab('history')}
+            >
+              <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>Historique</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'settings' && styles.activeTab]} 
+              onPress={() => setActiveTab('settings')}
+            >
+              <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>Paramètres</Text>
+            </TouchableOpacity>
+          </>
         )}
       </View>
 
@@ -122,8 +148,11 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             )}
           </View>
-        ) : (
+        ) : activeTab === 'history' ? (
           <View>
+            <TouchableOpacity style={styles.refreshButton} onPress={refreshHistory} disabled={refreshingHistory}>
+              <Text style={styles.refreshButtonText}>{refreshingHistory ? 'Actualisation...' : 'Actualiser l\'historique'}</Text>
+            </TouchableOpacity>
             {invoices.length === 0 ? (
               <Text style={styles.emptyText}>Aucune commande pour le moment.</Text>
             ) : (
@@ -141,6 +170,32 @@ export default function ProfileScreen() {
                 </View>
               ))
             )}
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Accessibilité</Text>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Contraste élevé</Text>
+              <Switch
+                value={accessibilitySettings.highContrast}
+                onValueChange={(value) => setAccessibilitySettings((prev) => ({ ...prev, highContrast: value }))}
+              />
+            </View>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Texte plus grand</Text>
+              <Switch
+                value={accessibilitySettings.largeText}
+                onValueChange={(value) => setAccessibilitySettings((prev) => ({ ...prev, largeText: value }))}
+              />
+            </View>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Réduire les animations</Text>
+              <Switch
+                value={accessibilitySettings.reduceAnimations}
+                onValueChange={(value) => setAccessibilitySettings((prev) => ({ ...prev, reduceAnimations: value }))}
+              />
+            </View>
+            <Text style={styles.settingsHint}>Ces options seront appliquées dans les prochaines versions de l’application.</Text>
           </View>
         )}
       </ScrollView>
@@ -178,6 +233,12 @@ const styles = StyleSheet.create({
   invoiceLine: { color: '#bbb', fontSize: 12, marginTop: 2 },
   invoicePrice: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   emptyText: { color: '#444', textAlign: 'center', marginTop: 40 },
+  refreshButton: { alignSelf: 'flex-start', marginBottom: 12, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#333', backgroundColor: '#1a1a1a' },
+  refreshButtonText: { color: '#fff', fontWeight: '600' },
+  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 16 },
+  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  settingLabel: { color: '#fff', fontSize: 16 },
+  settingsHint: { color: '#888', fontSize: 12, marginTop: 8 },
   logoutButton: { position: 'absolute', bottom: 30, left: 20, right: 20, padding: 18, borderRadius: 12, backgroundColor: '#111', borderWidth: 1, borderColor: '#300', alignItems: 'center' },
   logoutText: { color: '#ff4444', fontWeight: 'bold' }
 });
