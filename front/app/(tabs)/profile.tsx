@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert,
 import apiClient from '../../src/api/client';
 import { updateProfile } from '../../src/services/AuthService';
 import { useAuth } from '../../src/context/AuthContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 
 export default function ProfileScreen() {
   const { signOut, userToken } = useAuth();
@@ -13,11 +14,7 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<any>(null);
   const [refreshingHistory, setRefreshingHistory] = useState(false);
-  const [accessibilitySettings, setAccessibilitySettings] = useState({
-    highContrast: false,
-    largeText: false,
-    reduceAnimations: false,
-  });
+  const { settings: accessibilitySettings, setSettings: setAccessibilitySettings, textScale, colors } = useAccessibility();
   const isManager = user?.role === 'manager';
 
   const fetchInitialData = useCallback(async () => {
@@ -79,33 +76,33 @@ export default function ProfileScreen() {
   };
 
   if (loading || !user) {
-    return <View style={styles.centered}><ActivityIndicator color="#fff" size="large" /></View>;
+    return <View style={[styles.centered, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.textPrimary} size="large" /></View>;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerTitle}>Mon Compte</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.headerTitle, { color: colors.textPrimary, fontSize: 32 * textScale }]}>Mon Compte</Text>
 
       <View style={styles.tabBar}>
         <TouchableOpacity 
-          style={[styles.tab, activeTab === 'infos' && styles.activeTab]} 
+          style={[styles.tab, { backgroundColor: colors.card, borderColor: colors.border }, activeTab === 'infos' && styles.activeTab]} 
           onPress={() => setActiveTab('infos')}
         >
-          <Text style={[styles.tabText, activeTab === 'infos' && styles.activeTabText]}>Mes Infos</Text>
+          <Text style={[styles.tabText, { color: colors.textMuted, fontSize: 14 * textScale }, activeTab === 'infos' && styles.activeTabText]}>Mes Infos</Text>
         </TouchableOpacity>
         {!isManager && (
           <>
             <TouchableOpacity 
-              style={[styles.tab, activeTab === 'history' && styles.activeTab]} 
+              style={[styles.tab, { backgroundColor: colors.card, borderColor: colors.border }, activeTab === 'history' && styles.activeTab]} 
               onPress={() => setActiveTab('history')}
             >
-              <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>Historique</Text>
+              <Text style={[styles.tabText, { color: colors.textMuted, fontSize: 14 * textScale }, activeTab === 'history' && styles.activeTabText]}>Historique</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.tab, activeTab === 'settings' && styles.activeTab]} 
+              style={[styles.tab, { backgroundColor: colors.card, borderColor: colors.border }, activeTab === 'settings' && styles.activeTab]} 
               onPress={() => setActiveTab('settings')}
             >
-              <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>Paramètres</Text>
+              <Text style={[styles.tabText, { color: colors.textMuted, fontSize: 14 * textScale }, activeTab === 'settings' && styles.activeTabText]}>Paramètres</Text>
             </TouchableOpacity>
           </>
         )}
@@ -113,7 +110,7 @@ export default function ProfileScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {activeTab === 'infos' ? (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {[
               { label: 'Prénom', key: 'first_name' },
               { label: 'Nom', key: 'last_name' },
@@ -122,7 +119,7 @@ export default function ProfileScreen() {
               { label: 'Ville', key: 'city' },
             ].map(field => (
               <View key={field.key} style={styles.inputGroup}>
-                <Text style={styles.label}>{field.label}</Text>
+                <Text style={[styles.label, { color: colors.textMuted, fontSize: 11 * textScale }]}>{field.label}</Text>
                 {isEditing ? (
                   <TextInput
                     style={styles.input}
@@ -131,7 +128,7 @@ export default function ProfileScreen() {
                     placeholderTextColor="#444"
                   />
                 ) : (
-                  <Text style={styles.value}>{user[field.key] || 'Non renseigné'}</Text>
+                  <Text style={[styles.value, { color: colors.textPrimary, fontSize: 17 * textScale }]}>{user[field.key] || 'Non renseigné'}</Text>
                 )}
               </View>
             ))}
@@ -144,63 +141,63 @@ export default function ProfileScreen() {
             </TouchableOpacity>
             {isEditing && (
               <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelBtn}>
-                <Text style={{color: '#666'}}>Annuler</Text>
+                <Text style={{color: colors.textMuted, fontSize: 14 * textScale}}>Annuler</Text>
               </TouchableOpacity>
             )}
           </View>
         ) : activeTab === 'history' ? (
           <View>
             <TouchableOpacity style={styles.refreshButton} onPress={refreshHistory} disabled={refreshingHistory}>
-              <Text style={styles.refreshButtonText}>{refreshingHistory ? 'Actualisation...' : 'Actualiser l\'historique'}</Text>
+              <Text style={[styles.refreshButtonText, { fontSize: 14 * textScale }]}>{refreshingHistory ? 'Actualisation...' : 'Actualiser l\'historique'}</Text>
             </TouchableOpacity>
             {invoices.length === 0 ? (
-              <Text style={styles.emptyText}>Aucune commande pour le moment.</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted, fontSize: 14 * textScale }]}>Aucune commande pour le moment.</Text>
             ) : (
               invoices.map((item) => (
-                <View key={item.id} style={styles.invoiceItem}>
+                <View key={item.id} style={[styles.invoiceItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.invoiceDate}>Commande #{item.id}</Text>
-                    <Text style={styles.invoiceDetails}>{item.items?.length || 0} articles</Text>
-                    <Text style={styles.invoiceDetails}>Paiement PayPal: {item.paypal_id || 'N/A'}</Text>
+                    <Text style={[styles.invoiceDate, { color: colors.textPrimary, fontSize: 16 * textScale }]}>Commande #{item.id}</Text>
+                    <Text style={[styles.invoiceDetails, { color: colors.textMuted, fontSize: 13 * textScale }]}>{item.items?.length || 0} articles</Text>
+                    <Text style={[styles.invoiceDetails, { color: colors.textMuted, fontSize: 13 * textScale }]}>Paiement PayPal: {item.paypal_id || 'N/A'}</Text>
                     {(item.items || []).map((detail: any, idx: number) => (
-                      <Text key={`${item.id}-${idx}`} style={styles.invoiceLine}>• {detail.product_name} x{detail.quantity} ({Number(detail.unit_price).toFixed(2)} €)</Text>
+                      <Text key={`${item.id}-${idx}`} style={[styles.invoiceLine, { color: colors.textSecondary, fontSize: 12 * textScale }]}>• {detail.product_name} x{detail.quantity} ({Number(detail.unit_price).toFixed(2)} €)</Text>
                     ))}
                   </View>
-                  <Text style={styles.invoicePrice}>{Number(item.total_price).toFixed(2)} €</Text>
+                  <Text style={[styles.invoicePrice, { color: colors.textPrimary, fontSize: 18 * textScale }]}>{Number(item.total_price).toFixed(2)} €</Text>
                 </View>
               ))
             )}
           </View>
         ) : (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Accessibilité</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, fontSize: 18 * textScale }]}>Accessibilité</Text>
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Contraste élevé</Text>
+              <Text style={[styles.settingLabel, { color: colors.textPrimary, fontSize: 16 * textScale }]}>Contraste élevé</Text>
               <Switch
                 value={accessibilitySettings.highContrast}
                 onValueChange={(value) => setAccessibilitySettings((prev) => ({ ...prev, highContrast: value }))}
               />
             </View>
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Texte plus grand</Text>
+              <Text style={[styles.settingLabel, { color: colors.textPrimary, fontSize: 16 * textScale }]}>Texte plus grand</Text>
               <Switch
                 value={accessibilitySettings.largeText}
                 onValueChange={(value) => setAccessibilitySettings((prev) => ({ ...prev, largeText: value }))}
               />
             </View>
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Réduire les animations</Text>
+              <Text style={[styles.settingLabel, { color: colors.textPrimary, fontSize: 16 * textScale }]}>Réduire les animations</Text>
               <Switch
                 value={accessibilitySettings.reduceAnimations}
                 onValueChange={(value) => setAccessibilitySettings((prev) => ({ ...prev, reduceAnimations: value }))}
               />
             </View>
-            <Text style={styles.settingsHint}>Ces options seront appliquées dans les prochaines versions de l’application.</Text>
+            <Text style={[styles.settingsHint, { color: colors.textSecondary, fontSize: 12 * textScale }]}>Ces options sont appliquées immédiatement sur l’interface.</Text>
           </View>
         )}
       </ScrollView>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
+      <TouchableOpacity style={[styles.logoutButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={signOut}>
         <Text style={styles.logoutText}>Se déconnecter</Text>
       </TouchableOpacity>
     </View>

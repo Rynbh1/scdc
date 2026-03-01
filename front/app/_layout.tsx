@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { CartProvider } from '../src/context/CartContext'; 
+import { AccessibilityProvider } from '../src/context/AccessibilityContext';
 
 function InitialLayout() {
   const { userToken, isLoading, user } = useAuth();
@@ -30,9 +31,11 @@ function InitialLayout() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <InitialLayout />
-      </CartProvider>
+      <AccessibilityProvider>
+        <CartProvider>
+          <InitialLayout />
+        </CartProvider>
+      </AccessibilityProvider>
     </AuthProvider>
   );
 }
