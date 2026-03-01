@@ -77,6 +77,13 @@ export default function ScannerScreen() {
         Alert.alert('Inconnu', 'Produit non trouvé.');
         return;
       }
+      if (!isManager && (scannedProduct.requires_manager_action || scannedProduct.is_external)) {
+        Alert.alert(
+          'Produit non disponible en stock',
+          "Ce produit n'existe pas encore dans Trinity. Un manager doit l'ajouter avant de pouvoir le mettre au panier.",
+        );
+        return;
+      }
       openProductModal(scannedProduct);
       loadDbProducts();
     } catch {
@@ -139,6 +146,14 @@ export default function ScannerScreen() {
   };
 
   const handleAddToCart = () => {
+    if (product?.requires_manager_action || product?.is_external || !product?.id) {
+      Alert.alert(
+        'Action manager requise',
+        "Ce produit n'est pas encore référencé en stock. Un manager doit d'abord l'ajouter.",
+      );
+      return;
+    }
+
     const desiredQty = parseInt(quantityInput, 10);
     const stock = Number(product.available_quantity || 0);
 
@@ -238,6 +253,11 @@ export default function ScannerScreen() {
                           <Text style={styles.info}>Marque: {product.brand || 'N/A'}</Text>
                           <Text style={styles.info}>Catégorie: {product.category || 'N/A'}</Text>
                           <Text style={styles.info}>Infos nutritionnelles: {product.nutritional_info || 'N/A'}</Text>
+                          {(product.requires_manager_action || product.is_external) && (
+                            <Text style={styles.warningText}>
+                              Produit absent du stock Trinity : un manager doit l’ajouter pour autoriser la vente.
+                            </Text>
+                          )}
                         </View>
 
                         {isManager ? (
@@ -323,4 +343,5 @@ const styles = StyleSheet.create({
   input: { width: '100%', backgroundColor: '#222', color: '#fff', borderRadius: 8, padding: 10, marginBottom: 10 },
   addToCartButton: { backgroundColor: '#fff', width: '100%', padding: 14, borderRadius: 12, alignItems: 'center' },
   addToCartText: { color: '#000', fontWeight: 'bold' },
+  warningText: { color: '#ffcc00', fontWeight: '600', marginTop: 6 },
 });

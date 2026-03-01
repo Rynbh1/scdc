@@ -37,7 +37,7 @@ export default function CartScreen() {
         paypal_order_id: orderId,
       });
 
-      Alert.alert('Succès', 'Paiement validé et commande enregistrée.');
+      Alert.alert('Succès', 'Paiement PayPal validé et commande enregistrée. Vous pouvez fermer la page PayPal.');
       clearCart();
     } catch (error: any) {
       Alert.alert('Erreur', error?.response?.data?.detail || 'Impossible de finaliser la commande.');

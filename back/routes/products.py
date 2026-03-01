@@ -59,7 +59,7 @@ def _ensure_manager(user: models.User):
         )
 
 
-def _fetch_from_openfoodfacts(barcode: str, db: Session) -> models.Product:
+def _fetch_openfoodfacts_payload(barcode: str) -> dict:
     url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
     response = requests.get(url, timeout=10)
     data = response.json()
@@ -68,15 +68,22 @@ def _fetch_from_openfoodfacts(barcode: str, db: Session) -> models.Product:
         raise HTTPException(status_code=404, detail="Produit introuvable")
 
     p_data = data["product"]
+    return {
+        "off_id": barcode,
+        "name": p_data.get("product_name", "Inconnu"),
+        "brand": p_data.get("brands", ""),
+        "category": (p_data.get("categories", "") or "").split(",")[0],
+        "picture": p_data.get("image_front_url", ""),
+        "price": 0.0,
+        "nutritional_info": (p_data.get("nutriscore_grade", "") or "").upper(),
+        "available_quantity": 0,
+    }
+
+
+def _fetch_from_openfoodfacts(barcode: str, db: Session) -> models.Product:
+    product_payload = _fetch_openfoodfacts_payload(barcode)
     new_product = models.Product(
-        off_id=barcode,
-        name=p_data.get("product_name", "Inconnu"),
-        brand=p_data.get("brands", ""),
-        category=(p_data.get("categories", "") or "").split(",")[0],
-        picture=p_data.get("image_front_url", ""),
-        price=0.0,
-        nutritional_info=(p_data.get("nutriscore_grade", "") or "").upper(),
-        available_quantity=0,
+        **product_payload,
     )
     db.add(new_product)
     db.commit()
@@ -188,7 +195,11 @@ def scan_product(barcode: str, db: Session = Depends(get_db)):
         return product
 
     try:
-        return _fetch_from_openfoodfacts(barcode, db)
+        return {
+            **_fetch_openfoodfacts_payload(barcode),
+            "is_external": True,
+            "requires_manager_action": True,
+        }
     except HTTPException:
         raise
     except Exception:
